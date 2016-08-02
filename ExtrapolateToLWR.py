@@ -42,18 +42,19 @@ def execute(model, data, savepath, lwr_data, *args, **kwargs):
 
         alloy_list.append(alloy)
         testX = np.asarray(lwr_data.get_x_data())
-        Ypredict = model.predict(testX)
-        rms = np.sqrt(mean_squared_error(Ypredict, lwr_data.get_y_data()))
+        Ypredict = np.exp(model.predict(testX))
+        Yactual = np.exp(np.asarray(lwr_data.get_y_data()).ravel())
+        rms = np.sqrt(mean_squared_error(Ypredict, Yactual))
         rms_list.append(rms)
         if rms > 50:
-            ax.scatter(lwr_data.get_y_data(), Ypredict, s= 5, c = cmap(alloy), label= alloy, lw = 0)
-        else: ax.scatter(lwr_data.get_y_data(), Ypredict, s = 5, c = 'black', lw = 0)
+            ax.scatter(Yactual, Ypredict, s= 5, c = cmap(alloy), label= alloy, lw = 0)
+        else: ax.scatter(Yactual, Ypredict, s = 5, c = 'black', lw = 0)
 
 
     lwr_data.remove_all_filters()
     lwr_data.add_exclusive_filter("Time(Years)", '<', 60)
     lwr_data.add_exclusive_filter("Time(Years)", '>', 100)
-    rms = np.sqrt(mean_squared_error(model.predict(lwr_data.get_x_data()), lwr_data.get_y_data()))
+    rms = np.sqrt(mean_squared_error(np.exp(model.predict(lwr_data.get_x_data())), np.exp(np.asarray(lwr_data.get_y_data()).ravel())))
 
     ax.legend()
     ax.plot(plt.gca().get_ylim(), plt.gca().get_ylim(), ls="--", c=".3")

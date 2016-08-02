@@ -3,6 +3,7 @@ import importlib
 import data_parser
 import matplotlib
 import sys
+import numpy as np
 
 if len(sys.argv) > 1:
     config = configuration_parser.parse(sys.argv[1])
@@ -22,17 +23,34 @@ for case_name in all_tests:
             parameter_values.append(config.get('AllTests', parameter))
     model, data_path, save_path, y_data, x_data, lwr_data_path = parameter_values
 
+    if "CD" in y_data or "EONY" in y_data:
+        save_path = save_path.format(y_data.split(' ',1)[0] + '_{}')
+
     model = importlib.import_module(model).get()
     x_data = x_data.split(',')
 
     data = data_parser.parse(data_path)
     data.set_x_features(x_data)
-    data.set_y_feature(y_data)
+    #data.set_y_feature(y_data)
 
     lwr_data = data_parser.parse(lwr_data_path)
     if not y_data == "delta sigma":
         lwr_data.set_x_features(x_data)
-        lwr_data.set_y_feature(y_data)
+        #lwr_data.set_y_feature(y_data)
+
+        lwr_data.add_exclusive_filter(y_data, '<', 2)
+        lwr_data.overwrite_data_w_filtered_data()
+        ln_y = np.log(lwr_data.get_data(y_data))
+        lwr_data.add_feature("ln delta sigma", ln_y)
+        lwr_data.set_y_feature("ln delta sigma")
+
+    data.add_exclusive_filter(y_data, '<', 2)
+    data.overwrite_data_w_filtered_data()
+    ln_y = np.log(data.get_data(y_data))
+    data.add_feature("ln delta sigma", ln_y)
+    data.set_y_feature("ln delta sigma")
+
+
 
     if y_data == "CD delta sigma":
         data.add_exclusive_filter("Alloy",'=', 29)
