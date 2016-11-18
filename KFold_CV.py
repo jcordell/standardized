@@ -1,14 +1,13 @@
-import matplotlib
+
 import numpy as np
-import data_parser
 import matplotlib.pyplot as plt
 from mean_error import mean_error
 from sklearn import cross_validation
 from sklearn.metrics import mean_squared_error
 
 
-def execute(model, data, savepath, num_runs=200, num_folds=5, *args, **kwargs):
-    responseSquared = True
+def execute(model, data, savepath, num_runs=200, num_folds=5,responseNormalized = None,sigma = None, mean = None, *args, **kwargs):
+    # todo make sigma,mean intrinsic to the Data object
     # get data
     Ydata = np.array(data.get_y_data()).ravel()
     Xdata = np.array(data.get_x_data())
@@ -35,10 +34,15 @@ def execute(model, data, savepath, num_runs=200, num_folds=5, *args, **kwargs):
             Y_test_Pred = model.predict(X_test)
             rms = np.sqrt(mean_squared_error(Y_test, Y_test_Pred))
             me = mean_error(Y_test_Pred,Y_test)
-            if responseSquared:
-                Y_test = np.power(Y_test,0.5)
+            if responseNormalized == 'squared':
                 Y_test_Pred[Y_test_Pred < 0] = 0
-                Y_test_Pred = np.power(Y_test_Pred, 0.5)
+                Y_test = undoNormalize_Square(Y_test)
+                Y_test_Pred = undoNormalize_Square(Y_test_Pred)
+                rms = np.sqrt(mean_squared_error(Y_test, Y_test_Pred))
+                me = mean_error(Y_test_Pred, Y_test)
+            if responseNormalized == '0mean1sigma':
+                Y_test = undoNormalize_0meanSigma(Y_test,mean,sigma)
+                Y_test_Pred = undoNormalize_0meanSigma(Y_test_Pred,mean,sigma)
                 rms = np.sqrt(mean_squared_error(Y_test, Y_test_Pred))
                 me = mean_error(Y_test_Pred, Y_test)
             K_fold_rms_list.append(rms)
@@ -68,7 +72,8 @@ def execute(model, data, savepath, num_runs=200, num_folds=5, *args, **kwargs):
     print("The std deviation of the RMSE values was {:.3f}".format(sd))
 
     f, ax = plt.subplots(1, 2, figsize = (11,5))
-    if responseSquared: ax[0].scatter(np.power(Ydata,0.5), Y_predicted_best, c='black', s=10)
+    if responseNormalized == 'squared': ax[0].scatter(undoNormalize_Square(Ydata), Y_predicted_best, c='black', s=10)
+    elif responseNormalized == '0mean1sigma': ax[1].scatter(undoNormalize_0meanSigma(Ydata,mean,sigma), Y_predicted_worst, c='black', s=10)
     else: ax[0].scatter(Ydata, Y_predicted_best, c='black', s=10)
     ax[0].plot(ax[0].get_ylim(), ax[0].get_ylim(), ls="--", c=".3")
     ax[0].set_title('Best Fit')
@@ -79,7 +84,8 @@ def execute(model, data, savepath, num_runs=200, num_folds=5, *args, **kwargs):
     ax[0].set_xlabel('Measured (Mpa)')
     ax[0].set_ylabel('Predicted (Mpa)')
 
-    if responseSquared: ax[1].scatter(np.power(Ydata,0.5), Y_predicted_worst, c='black', s=10)
+    if responseNormalized == 'squared': ax[1].scatter(undoNormalize_Square(Ydata), Y_predicted_worst, c='black', s=10)
+    elif responseNormalized == '0mean1sigma': ax[1].scatter(undoNormalize_0meanSigma(Ydata,mean,sigma), Y_predicted_worst, c='black', s=10)
     else: ax[1].scatter(Ydata, Y_predicted_worst, c='black', s=10)
     ax[1].plot(ax[1].get_ylim(), ax[1].get_ylim(), ls="--", c=".3")
     ax[1].set_title('Worst Fit')
@@ -91,3 +97,9 @@ def execute(model, data, savepath, num_runs=200, num_folds=5, *args, **kwargs):
     f.savefig(savepath.format("cv_best_worst"), dpi=200, bbox_inches='tight')
     plt.clf()
     plt.close()
+
+def undoNormalize_0meanSigma(value,mean,sigma):
+    return value*sigma + mean
+
+def undoNormalize_Square(value):
+    return np.power(value,0.5)
