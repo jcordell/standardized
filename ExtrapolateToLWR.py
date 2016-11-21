@@ -27,10 +27,15 @@ it is intended that data's response is a CD prediction
 lwr_data is data in the domain of LWR conditions (low flux, high fluence)
 '''
 
-def execute(model, data, savepath, lwr_data,responseNormalized = None,sigma = None, mean = None,*args,**kwargs):
+def execute(model, data, savepath, lwr_data,*args,**kwargs):
 
     #todo make sigma,mean intrinsic to the Data object
     #currently values for Data_20_0meanNorm's N_std_ responses
+    # todo pass as args from config
+    responseNormalized = '0mean1sigma'
+    #CD values from Data
+    sigma = 66.1348995033
+    mean = 80.1519721578
 
     if(data.y_feature == "delta sigma"):
         print("Must set Y to be CD Delta Sigma or EONY Delta Sigma for Extrapolating to LWR")
@@ -112,7 +117,7 @@ def execute(model, data, savepath, lwr_data,responseNormalized = None,sigma = No
         over200_rms = np.sqrt(mean_squared_error(actual, prediction))
     if responseNormalized == '0mean1sigma':
         actual = undoNormalize_0meanSigma(np.asarray(lwr_data.get_y_data()),mean,sigma)
-        prediction = undoNormalize_0meanSigma(model.predict(lwr_data.get_x_data(),mean,sigma))
+        prediction = undoNormalize_0meanSigma(model.predict(lwr_data.get_x_data()),mean,sigma)
         over200_rms = np.sqrt(mean_squared_error(actual,prediction))
     lwr_data.remove_all_filters()
     lwr_data.add_exclusive_filter("Time(Years)", '<', 60)
@@ -138,7 +143,7 @@ def execute(model, data, savepath, lwr_data,responseNormalized = None,sigma = No
         lwr_over200_rms = np.sqrt(mean_squared_error(actual,prediction))
     if responseNormalized == '0mean1sigma':
         actual = undoNormalize_0meanSigma(np.asarray(lwr_data.get_y_data()),mean,sigma)
-        prediction = undoNormalize_0meanSigma(model.predict(lwr_data.get_x_data(),mean,sigma))
+        prediction = undoNormalize_0meanSigma(model.predict(lwr_data.get_x_data()),mean,sigma)
         lwr_over200_rms = np.sqrt(mean_squared_error(actual,prediction))
 
     ax[0].legend()
@@ -190,7 +195,7 @@ def execute(model, data, savepath, lwr_data,responseNormalized = None,sigma = No
             writer.writerow(i)
 
 def undoNormalize_0meanSigma(value,mean,sigma):
-    return value*sigma + mean
+    return (value*sigma) + mean
 
 def undoNormalize_Square(value):
     return np.power(value,0.5)

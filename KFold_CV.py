@@ -6,8 +6,13 @@ from sklearn import cross_validation
 from sklearn.metrics import mean_squared_error
 
 
-def execute(model, data, savepath, num_runs=200, num_folds=5,responseNormalized = None,sigma = None, mean = None, *args, **kwargs):
+def execute(model, data, savepath, num_runs=200, num_folds=5, *args, **kwargs):
+
     # todo make sigma,mean intrinsic to the Data object
+    #todo pass as args from config
+    responseNormalized = None
+    sigma = None
+    mean = None
     # get data
     Ydata = np.array(data.get_y_data()).ravel()
     Xdata = np.array(data.get_x_data())

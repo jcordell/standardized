@@ -5,8 +5,12 @@ from mean_error import mean_error
 import csv
 
 
-def execute(model, data, savepath,responseNormalized = None,sigma = None, mean = None, *args, **kwargs):
-    responseSquared = False
+def execute(model, data, savepath, *args, **kwargs):
+    # todo pass as args from config
+    responseNormalized = '0mean1sigma'
+    #CD values from Data
+    sigma = 66.1348995033
+    mean = 80.1519721578
     rms_list = []
     alloy_list = []
     me_list = []
